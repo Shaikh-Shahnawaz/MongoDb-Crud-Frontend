@@ -1,4 +1,5 @@
 
+
 const ShowStudentDetails = ({studentsData,deleteStudent,openModal})=>{
 
   
@@ -39,6 +40,7 @@ const ShowStudentDetails = ({studentsData,deleteStudent,openModal})=>{
                        
                     </tbody>
                 </table>
+               
         </div>
         </>
     )

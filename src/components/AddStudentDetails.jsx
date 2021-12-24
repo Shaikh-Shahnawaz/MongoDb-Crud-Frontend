@@ -3,6 +3,9 @@ import axios from "axios"
 import ShowStudentDetails from './ShowStudentDetails'
 import UpdateStudent from "./UpdateStudent"
 
+import Pagination from "./Pagination"
+import _ from "lodash"
+
 const AddStudentDetails = () => {
 
     const [studentsData,setStudentsData]= useState([])
@@ -10,22 +13,43 @@ const AddStudentDetails = () => {
     const [edited,setEdited] = useState(false)
     // Ref For clearing the add input
     const clearInputVal = useRef('')
-    // [ =========================== Get Request ===========================  ]
+
+    // [ =========================== Getting Data Via Post Request ===========================  ]
+
+    // storing total count
+    const [noOfPages,setNoOfPages] = useState([])
+    const [totalCount,setTotalCount] = useState(0)
+    // storing limit and page dynamically to sending in payload
+    const [limit,setLimit] = useState(5)
+    const [page,setPage] = useState(0)
 
     const getStudent = ()=>{
         const URL = 'http://localhost:8080/api/students/getAllData'
-        axios.get(URL).then((res)=>{
-            // console.log(res.data.data)
+        // this is for pagination
+        const payload = {limit:limit,page:page}
+        axios.post(URL,payload).then((res)=>{
             setStudentsData(res.data.data)
+
+            setTotalCount(res.data.totalCount)
+            
+            setNoOfPages([
+               ..._.range(Math.ceil(totalCount/limit))
+            ])
+            
         }).catch(err=>console.log(err))
     }
 
-    console.log(studentsData)
+    //  function for getting the paginate data
+    const paginateData = (pageNum)=>{
+        setPage(pageNum)
+    }
+    
+    // ============================= Use Effect ============================= 
     useEffect(()=>{
     
         getStudent()
-        
-    },[deleted,edited])
+            
+    },[deleted,edited,page,totalCount])
     
     
     // [ =========================== Post Request ===========================  ]
@@ -46,7 +70,7 @@ const AddStudent = ()=>{
 
     const URL = 'http://localhost:8080/api/students/insertOne'
     const payload = inputData
-    console.log(payload)
+   
     axios.post(URL,payload).then((res)=>{
         setStudentsData([...studentsData,res.data.data])
     }).catch(err=>console.log(err))
@@ -56,17 +80,18 @@ const AddStudent = ()=>{
 // [ =========================== Delete Request ===========================  ]
 
 const deleteStudent = (id)=>{
+    // axios.delete(url, { data: { foo: "bar" }, headers: { "Authorization": "***" } });
+    const URL = 'http://localhost:8080/api/students/deleteById'
+
+    axios.delete(URL,{data:{id:id}}).then((res)=>{
+        setDeleted(!deleted)
+    }).catch(err=>console.log(err))
     
-    // const URL = 'http://localhost:8080/api/students/deleteById'
-    // axios.delete(URL,id).then((res)=>{
+    // axios.delete(`http://localhost:8080/api/students/deleteByParamsId/${id}`).then((res)=>{
         
-    // }).catch(err=>console.log(err))
-    
-    axios.delete(`http://localhost:8080/api/students/deleteByParamsId/${id}`).then((res)=>{
-        
-            setDeleted(!deleted)
+    //         setDeleted(!deleted)
             
-        }).catch(err=>console.log(err))
+    //     }).catch(err=>console.log(err))
         
     }
     // [ =========================== Put Request ===========================  ]
@@ -74,7 +99,7 @@ const [editId,setEditId] = useState()
 const [toggleEdit,setToggleEdit] = useState(false)
 
     const openModal = (id)=>{
-        console.log('open modal',id)
+       
         setEditId(id)
         setToggleEdit(true)
 
@@ -85,9 +110,15 @@ const [toggleEdit,setToggleEdit] = useState(false)
 
  const updateStudent = (data)=>{
      
-     axios.put(`http://localhost:8080/api/students/updateByParamsId/${editId}`,data).then((res)=>{
+    //  axios.put(`http://localhost:8080/api/students/updateByParamsId/${editId}`,data).then((res)=>{
+    //     setEdited(!edited)
+        
+    //     // setStudentsData([...studentsData,res.data.data])
+    //  }).catch(err=>console.log(err))
+    data.id = editId
+     axios.put(`http://localhost:8080/api/students/updateById`,data).then((res)=>{
         setEdited(!edited)
-        console.log('put request')
+        
         // setStudentsData([...studentsData,res.data.data])
      }).catch(err=>console.log(err))
  }   
@@ -141,6 +172,8 @@ const [toggleEdit,setToggleEdit] = useState(false)
                 <ShowStudentDetails studentsData={studentsData} deleteStudent={deleteStudent} openModal={openModal} />
                        {/* =============Updating Studets Detail============= */}
                 <UpdateStudent toggleEdit={toggleEdit} hideModal={hideModal} updateStudent={updateStudent} />
+            {/* ===========Pagination=========== */}
+            <Pagination noOfPages={noOfPages} paginateData={paginateData}  />
         </>
     )
 }
